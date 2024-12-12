@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Task Assistant</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 25px;
+            background-color: #346add;
+        }
+        .container {
+            background-color: #f099bf;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #ecf2cb;
+        }
+        input[type="text"], select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #c7f3c1;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        textarea {
+            height: 130px;
+            resize: vertical;
+        }
+        button {
+            background-color: #074583;
+            color: white;
+            padding: 14px 22px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #003f7f;
+        }
+        .response {
+            margin-top: 30px;
+            padding: 18px;
+            border-left: 6px solid #00509e;
+            background-color: #f0f4f8;
+        }
+        .sources {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #555555;
+        }
+        .confidence {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 6px 12px;
+            background-color: #1f7a38;
+            color: white;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Smart Task Assistant</h1>
+        
+        <div class="input-group">
+            <label for="task-type">Select Task Type:</label>
+            <select id="task-type">
+                <option value="Technology">Technology</option>
+                <option value="Medical">Medical</option>
+                <option value="general">General Query</option>
+            </select>
+        </div>
+        
+        <div class="input-group">
+            <label for="task">Describe Your Task:</label>
+            <textarea id="task" placeholder="Provide details about your task..."></textarea>
+        </div>
+        
+
+        
+        <button onclick="processTask()">Submit</button>
+        
+        <div id="response" class="response" style="display: none;">
+            <h3>Result:</h3>
+            <div id="response-content"></div>
+            <div id="sources" class="sources"></div>
+            <div id="confidence"></div>
+        </div>
+    </div>
+
+    <script>
+        async function processTask() {
+            const taskType = document.getElementById('task-type').value;
+            const task = document.getElementById('task').value;
+            const context = document.getElementById('context').value;
+
+            try {
+                const response = await fetch('/process', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        task_type: taskType,
+                        task: task,
+                        context: context || undefined
+                    }),
+                });
+
+                const data = await response.json();
+                
+                // Display response
+                document.getElementById('response').style.display = 'block';
+                document.getElementById('response-content').innerHTML = marked.parse(data.response);
+                
+                // Display sources if available
+                const sourcesElement = document.getElementById('sources');
+                if (data.sources && data.sources.length > 0) {
+                    sourcesElement.innerHTML = '<h4>Sources:</h4><ul>' + 
+                        data.sources.map(source => `<li>${source}</li>`).join('') + '</ul>';
+                } else {
+                    sourcesElement.innerHTML = '';
+                }
+                
+                // Display confidence if available
+                const confidenceElement = document.getElementById('confidence');
+                if (data.confidence) {
+                    confidenceElement.innerHTML = `<span class="confidence">Confidence: ${(data.confidence * 100).toFixed(1)}%</span>`;
+                } else {
+                    confidenceElement.innerHTML = '';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while processing your request. Please try again later.');
+            }
+        }
+    </script>
+</body>
+</html>
